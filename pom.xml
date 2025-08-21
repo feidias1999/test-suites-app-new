@@ -9,24 +9,32 @@
     <version>1.0-SNAPSHOT</version>
 
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <!-- Use Java 17 LTS for compatibility with Appium and Selenium.
+             Newer language levels (e.g. 21) are supported by the
+             toolchain but many test frameworks still target 17. -->
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencies>
-        <!-- Appium -->
+        <!-- Appium Java client aligned with Selenium 4.34.0.  Versions
+             earlier than 9.5.0 depend on Selenium classes (e.g.
+             ContextAware) that were removed in 4.34.0, leading to
+             compilation errors. -->
         <dependency>
             <groupId>io.appium</groupId>
             <artifactId>java-client</artifactId>
-            <version>9.2.0</version>
+            <version>9.5.0</version>
         </dependency>
 
-        <!-- Selenium umbrella (api, remote-driver, support, etc.) -->
+        <!-- Selenium umbrella (API, remote-driver, support, etc.)
+             Version 4.34.0 was current at the time of writing and is
+             compatible with Appium Java client 9.5.0. -->
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-java</artifactId>
-            <version>4.22.0</version>
+            <version>4.34.0</version>
         </dependency>
 
         <!-- TestNG -->
@@ -37,5 +45,29 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- The Surefire plugin runs unit and integration tests.  Here we
+                 explicitly include any class whose name ends with "Test" so
+                 TestNG tests are discovered automatically.  Without this
+                 configuration, TestNG annotations would still work when
+                 specifying -Dtest=... on the command line, but running
+                 `mvn test` without -Dtest would not execute TestNG tests. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <includes>
+                        <include>**/*Test.java</include>
+                    </includes>
+                    <!-- Use the system class loader so TestNG can load
+                         Service Provider Interface (SPI) implementations. -->
+                    <useSystemClassLoader>true</useSystemClassLoader>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
